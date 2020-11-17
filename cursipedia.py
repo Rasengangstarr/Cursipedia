@@ -4,15 +4,16 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import wikipedia
+from pick import pick
 
 def cleanhtml(raw_html):
   cleanr = re.compile('<.*?>')
   cleantext = re.sub(cleanr, '', raw_html)
   return cleantext
 
-
 def getTextForPage(title):
     paragraphs = []
+   
     p = wikipedia.page(title)
     content = p.content # Content of page.
     content = content.encode("ascii", "ignore")
@@ -31,8 +32,22 @@ def showPage(stdscr, pageName, sh, sw):
     curses.curs_set(0)
     stdscr.clear()
     box = [[3,3], [sh-3, sw-3]]
+    
+    try:
+        contents = getTextForPage(pageName)
+    except wikipedia.DisambiguationError as e:
+        title = 'Disambiguation error returned, which of these do you care about?'
+        option, index = pick(e.options, title)
+        showPage(stdscr, option, sh, sw)
+        stdscr.refresh()
+        return ""
+
+
+    if contents == "":
+        return
+
     textpad.rectangle(stdscr, box[0][0], box[0][1], box[1][0], box[1][1])
-    contents = getTextForPage(pageName)
+    
     stdscr.addstr(2, sw//2-len(pageName)//2, pageName)
     lines = fitTextToScreen(contents, sw-7)
 
